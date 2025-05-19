@@ -69,7 +69,6 @@ ss_total = sum((y - y_avg)**2 for y in true_vals)
 ss_res = sum((y - p)**2 for y, p in zip(true_vals, final_preds))
 r2 = 1 - (ss_res / ss_total)
 
-print("--- Model Evaluation (Gradient Descent) ---")
 print(f"MAE: {mae:.2f}")
 print(f"RMSE: {rmse:.2f}")
 print(f"R^2 Score: {r2:.4f}")
