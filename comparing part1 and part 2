@@ -1,0 +1,77 @@
+import time
+
+start_time = time.time()
+for epoch in range(epochs):
+    preds = X_train @ weights
+    error = preds - y_train
+    gradients = (X_train.T @ error) / X_train.shape[0]
+    weights -= alpha * gradients
+    mse = np.mean(error ** 2)
+    losses.append(mse)
+end_time = time.time()
+
+training_time = end_time - start_time
+print(f"Training Time (NumPy): {training_time:.2f} seconds")
+
+
+weights = [0.0] * len(features)
+alpha = 0.01
+epochs = 500
+m = len(y_train)
+losses = []
+
+X_train_list = X_train.tolist()
+y_train_list = y_train.flatten().tolist()
+
+start_time = time.time()
+for epoch in range(epochs):
+    preds = [sum(w * x for w, x in zip(weights, xi)) for xi in X_train_list]
+    gradients = [0.0] * len(weights)
+    for i in range(m):
+        error = preds[i] - y_train_list[i]
+        for j in range(len(weights)):
+            gradients[j] += error * X_train_list[i][j]
+    for j in range(len(weights)):
+        weights[j] -= (alpha / m) * gradients[j]
+    mse = sum((preds[i] - y_train_list[i]) ** 2 for i in range(m)) / m
+    losses.append(mse)
+end_time = time.time()
+training_time = end_time - start_time
+print(f"Training Time (Pure Python): {training_time:.2f} seconds")
+
+# Plot convergence curves
+plt.figure(figsize=(12, 6))
+plt.plot(losses_py, label='Pure Python')
+plt.plot(losses_np, label='NumPy')
+plt.title("Cost Function Convergence")
+plt.xlabel("Epoch")
+plt.ylabel("MSE Loss")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Bar chart of regression metrics
+metrics = ['MAE', 'RMSE', 'R2']
+values_py = [mae_py, rmse_py, r2_py]
+values_np = [mae_np, rmse_np, r2_np]
+x = np.arange(len(metrics))
+width = 0.35
+
+fig, ax = plt.subplots(figsize=(8, 5))
+rects1 = ax.bar(x - width/2, values_py, width, label='Pure Python')
+rects2 = ax.bar(x + width/2, values_np, width, label='NumPy')
+
+ax.set_ylabel('Score')
+ax.set_title('Regression Metrics Comparison')
+ax.set_xticks(x)
+ax.set_xticklabels(metrics)
+ax.legend()
+plt.grid(True, axis='y')
+plt.tight_layout()
+plt.show()
+
+print("--- Model Evaluation (Pure Python) ---")
+print(f"MAE: {mae_py:.2f}, RMSE: {rmse_py:.2f}, R^2: {r2_py:.4f}, Time: {end_py - start_py:.2f}s")
+print("--- Model Evaluation (NumPy) ---")
+print(f"MAE: {mae_np:.2f}, RMSE: {rmse_np:.2f}, R^2: {r2_np:.4f}, Time: {end_np - start_np:.2f}s")
+
