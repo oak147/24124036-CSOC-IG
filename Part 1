@@ -1,0 +1,75 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from google.colab import files
+from io import StringIO
+
+uploaded = files.upload()
+file_content = list(uploaded.values())[0].decode('utf-8')
+df = pd.read_csv(StringIO(file_content))
+
+df = df.dropna()
+assert pd.api.types.is_numeric_dtype(df['median_house_value']), "Target must be numeric."
+drop_cols = ['total_bedrooms', 'population', 'households']
+df = df.drop(columns=drop_cols, errors='ignore')
+df = pd.get_dummies(df, drop_first=True)
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
+plt.title("Feature Correlation Heatmap")
+plt.show()
+
+features = df.drop(columns=['median_house_value']).columns.tolist()
+df[features] = (df[features] - df[features].mean()) / df[features].std()
+target = 'median_house_value'
+y_mean, y_std = df[target].mean(), df[target].std()
+df[target] = (df[target] - y_mean) / y_std
+df['bias'] = 1.0
+features = ['bias'] + features
+
+train_df = df.sample(frac=0.8, random_state=42)
+test_df = df.drop(train_df.index)
+X_train = train_df[features].values.tolist()
+y_train = train_df[target].values.tolist()
+X_test = test_df[features].values.tolist()
+y_test = test_df[target].values.tolist()
+
+weights = [0.0] * len(features)
+alpha = 0.01
+epochs = 500
+m = len(y_train)
+losses = []
+
+for epoch in range(epochs):
+    preds = [sum(w * x for w, x in zip(weights, xi)) for xi in X_train]
+    gradients = [0.0] * len(weights)
+    for i in range(m):
+        error = preds[i] - y_train[i]
+        for j in range(len(weights)):
+            gradients[j] += error * X_train[i][j]
+    for j in range(len(weights)):
+        weights[j] -= (alpha / m) * gradients[j]
+    mse = sum((preds[i] - y_train[i])**2 for i in range(m)) / m
+    losses.append(mse)
+
+plt.plot(range(epochs), losses)
+plt.title("Training Loss (MSE)")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.grid(True)
+plt.show()
+
+final_preds = [sum(w * x for w, x in zip(weights, xi)) * y_std + y_mean for xi in X_test]
+true_vals = [yt * y_std + y_mean for yt in y_test]
+n = len(true_vals)
+mae = sum(abs(p - y) for p, y in zip(final_preds, true_vals)) / n
+rmse = (sum((p - y)**2 for p, y in zip(final_preds, true_vals)) / n) ** 0.5
+y_avg = sum(true_vals) / n
+ss_total = sum((y - y_avg)**2 for y in true_vals)
+ss_res = sum((y - p)**2 for y, p in zip(true_vals, final_preds))
+r2 = 1 - (ss_res / ss_total)
+
+print("--- Model Evaluation (Gradient Descent) ---")
+print(f"MAE: {mae:.2f}")
+print(f"RMSE: {rmse:.2f}")
+print(f"R^2 Score: {r2:.4f}")
