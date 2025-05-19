@@ -64,7 +64,6 @@ ss_total = np.sum((true_vals - y_avg) ** 2)
 ss_res = np.sum((true_vals - final_preds) ** 2)
 r2 = 1 - (ss_res / ss_total)
 
-print("--- Model Evaluation (Gradient Descent, NumPy) ---")
 print(f"MAE: {mae:.2f}")
 print(f"RMSE: {rmse:.2f}")
 print(f"R^2 Score: {r2:.4f}")
